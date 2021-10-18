@@ -16,16 +16,44 @@ public class GameManager : MonoBehaviour
     private List<Node> _nodes;
     private List<Block> _blocks;
 
+    private GameState _state;
+    private int _round;
+
     private BlockType GetBlockTypeByValue(int value) => _types.First(t => t.Value == value);
 
     private void Start()
     {
-        GenerateGrid();
-        SpawnBlocks(2);
+        ChangeState(GameState.GenerateLevel);
+    }
+
+    private void ChangeState(GameState newState)
+    {
+        _state = newState;
+
+        switch (newState) 
+        {
+            case GameState.GenerateLevel:
+                GenerateGrid();
+                break;
+            case GameState.SpawningBlocks:
+                SpawnBlocks(_round++ == 0 ? 2 : 1);
+                break;
+            case GameState.WaitingInput:
+                break;
+            case GameState.Moving:
+                break;
+            case GameState.Win:
+                break;
+            case GameState.Lose:
+                break;
+            default:
+                break;
+        }
     }
 
     void GenerateGrid()
     {
+        _round = 0;
         _nodes = new List<Node>();
         _blocks = new List<Block>();
 
@@ -44,6 +72,8 @@ public class GameManager : MonoBehaviour
         board.size = new Vector2(_width, _height);
 
         Camera.main.transform.position = new Vector3(center.x, center.y, -10);
+
+        ChangeState(GameState.SpawningBlocks);
     }
 
     void SpawnBlocks(int amount)
@@ -53,7 +83,7 @@ public class GameManager : MonoBehaviour
         foreach (var node in freeNodes.Take(amount))
         {
             var block = Instantiate(_blockPrefab, node.Pos, Quaternion.identity);
-            block.Init(GetBlockTypeByValue(2));
+            block.Init(GetBlockTypeByValue(Random.value > 0.8f ? 4 : 2));
         }
 
         if (freeNodes.Count() == 1)
@@ -61,6 +91,8 @@ public class GameManager : MonoBehaviour
             // Lost the game
             return;
         }
+
+        ChangeState(GameState.WaitingInput);
     }
 }
 
@@ -69,4 +101,14 @@ public struct BlockType
 {
     public int Value;
     public Color Color;
+}
+
+public enum GameState
+{
+    GenerateLevel,
+    SpawningBlocks,
+    WaitingInput,
+    Moving,
+    Win,
+    Lose
 }
